@@ -1,0 +1,48 @@
+version: '3.4'
+
+
+services:
+
+  xserver:
+    image: suchja/x11server
+    container_name: xserver
+    user: root
+    environment:
+      - VNC_PASSWORD=tester
+      - XFB_SCREEN=1280x800x24
+      - XFB_SCREEN_DPI=150
+    command: 
+      - "-create"
+    ports:
+      - "5900:5900"
+    networks:
+      lan:
+        aliases:
+          - xserver.lan.com 
+  xclient:
+    build: ./docker/xclient
+    container_name: xclient
+    networks:
+      lan:
+        aliases:
+          - xclient.lan.com
+  devbox:
+    build: ./docker/dev-wm
+    container_name: devbox
+    user: will
+    volumes:
+      - "devstorage:/usr/local/cargo"
+      - "./docker/dev-wm:/usr/src/dev-wm:rw"
+    networks:
+      lan:
+        aliases:
+          - devbox.lan.com   
+
+
+networks:
+  lan:
+    driver: bridge
+
+    
+volumes:
+  devstorage:
