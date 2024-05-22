@@ -14,3 +14,4 @@ path = "src/bin.rs"
 [dependencies]
 xcb = "1.4.0"
 anyhow = "1.0"
+thiserror = "1.0.61"
