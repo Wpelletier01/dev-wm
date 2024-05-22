@@ -15,6 +15,7 @@ services:
       - "-create"
     ports:
       - "5900:5900"
+      - "6000:6000"
     networks:
       lan:
         aliases:
@@ -26,23 +27,7 @@ services:
       lan:
         aliases:
           - xclient.lan.com
-  devbox:
-    build: ./docker/dev-wm
-    container_name: devbox
-    user: dockerman
-    volumes:
-      - "devstorage:/usr/local/cargo"
-      - "./docker/dev-wm:/usr/src/dev-wm:rw"
-    networks:
-      lan:
-        aliases:
-          - devbox.lan.com   
-
-
 networks:
   lan:
     driver: bridge
-
     
-volumes:
-  devstorage:
