@@ -29,7 +29,7 @@ services:
   devbox:
     build: ./docker/dev-wm
     container_name: devbox
-    user: will
+    user: dockerman
     volumes:
       - "devstorage:/usr/local/cargo"
       - "./docker/dev-wm:/usr/src/dev-wm:rw"
