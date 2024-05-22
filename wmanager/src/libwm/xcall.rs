@@ -1,4 +1,4 @@
-use xcb::x::{self, Str};
+use xcb::{x, Xid};
 use super::object;
 
 #[derive(thiserror::Error,Debug)]
@@ -11,7 +11,9 @@ pub enum XError {
     #[error(transparent)]
     Protocol(#[from] xcb::ProtocolError),
     #[error("No screen with {0} exist")]
-    BadScreenNum(usize)
+    BadScreenNum(usize),
+    #[error("No window with the id '{0}' exist")]
+    BadWindowId(u32)
 
 }
 
@@ -43,21 +45,76 @@ impl Interactor {
 
     }
 
+    pub fn get_screen_dim(&self) -> (u16,u16) { 
+        let screen = self.get_root_screen(0).unwrap();
 
-    pub fn get_window_on_screen(&self, screen_num:usize) -> Result<Vec<object::Window>,XError> {
+        (screen.width_in_pixels(),screen.height_in_pixels())
+
+    }
+
+    pub fn update_window_geo(&self,idx:u32, x:i16,y:i16,w:u16,h:u16) -> Result<(),XError> {
+        
+        
+        let screen = self.get_root_screen(0)?;
+
+        let cookie = self.conn.send_request(&x::QueryTree { window: screen.root()});
+
+
+        for child in self.conn.wait_for_reply(cookie)?.children() {
+            
+            if child.resource_id() == idx {
+
+                let change_cookie = self.conn.send_request(&x::ConfigureWindow {
+                    window: *child,
+                    value_list: &[
+                        x::ConfigWindow::X(x.into()),
+                        x::ConfigWindow::Y(y.into()),
+                        x::ConfigWindow::Width(w.into()),
+                        x::ConfigWindow::Height(h.into()),
+                    ],
+                });
+
+                self.conn.flush()?;
+
+
+                return Ok(());                
+
+            }
+
+        }
+
+        Err(XError::BadWindowId(idx))
+
+
+    }
+
+    pub fn get_window_on_screen(&self, screen_num:usize, workspace:u8) -> Result<Vec<object::Window>,XError> {
 
         let screen = self.get_root_screen(screen_num)?;
+
         let mut windows: Vec<object::Window> = Vec::new();
+
+        let mut title:String;
+        let mut class:String;
 
         let cookie = self.conn.send_request(&x::QueryTree { window: screen.root()});
         
         for child in self.conn.wait_for_reply(cookie)?.children() {
+            
+            title = self.get_string_window_property(child, x::ATOM_WM_NAME)?;
+            class = self.get_string_window_property(child, x::ATOM_WM_CLASS)?;
 
-            windows.push(
-                object::Window {
-                    class: self.get_window_property(child, x::ATOM_WM_CLASS)? 
-                }
-            )
+            // tmp filter
+            if !class.is_empty() && !title.is_empty() {
+                windows.push(
+                    object::Window::new( 
+                        child.resource_id(),
+                        workspace,
+                        self.get_string_window_property(child, x::ATOM_WM_NAME)?
+                    )
+                );
+
+            }
 
         } 
 
@@ -66,8 +123,9 @@ impl Interactor {
 
     }
 
-    fn get_window_property(&self, window:&x::Window, property:x::Atom) -> Result<String,XError> {
+    fn get_string_window_property(&self, window:&x::Window, property:x::Atom) -> Result<String,XError> {
 
+    
         let cookie = self.conn.send_request(&x::GetProperty {
             delete: false,
             window: *window,
@@ -79,8 +137,9 @@ impl Interactor {
         });
         
         let reply = self.conn.wait_for_reply(cookie)?;
-        
+                    
         Ok(std::str::from_utf8(reply.value()).unwrap().to_string())
+
 
     }
 
