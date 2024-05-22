@@ -4,8 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [lib]
-name = "wmlib"
-path = "src/wmlib/lib.rs"
+name = "libwm"
+path = "src/libwm/lib.rs"
 
 [[bin]]
 name = "wmanager"
@@ -14,4 +14,3 @@ path = "src/bin.rs"
 [dependencies]
 xcb = "1.4.0"
 anyhow = "1.0"
-
