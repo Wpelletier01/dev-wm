@@ -12,6 +12,6 @@ name = "wmanager"
 path = "src/bin.rs"
 
 [dependencies]
-xcb = "1.4.0"
+xcb = { version = "1.4.0", features = [] }
 anyhow = "1.0"
 thiserror = "1.0.61"
